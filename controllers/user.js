@@ -1,26 +1,34 @@
+// Import User model and bcrypt library
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 
+// Render the sign-in page
 module.exports.renderSignIn = function (req, res) {
   if (req.isAuthenticated()) {
+    //If user is already authenticated, redirect to home page
     return res.redirect("/home");
   }
+  // Otherwise, render the sign-in page
   return res.render("sign_in", { title: "Sign In" });
 };
 
 module.exports.renderSignUp = function (req, res) {
   if (req.isAuthenticated()) {
+    //If user is already authenticated, redirect to home page
     return res.redirect("/home");
   }
+  // Otherwise, render the sign-up page
   return res.render("sign_up", {
     title: "Sign Up",
   });
 };
 
+// Render the home page
 module.exports.renderHome = function (req, res) {
   return res.render("home", { title: "Home Page", user: req.user });
 };
 
+// Render the reset password page
 module.exports.renderResetPassword = function (req, res) {
   return res.render("reset_password", {
     title: "Reset Password",
@@ -28,27 +36,35 @@ module.exports.renderResetPassword = function (req, res) {
   });
 };
 
-//update password
+// Async function to update user password
 module.exports.updatePassword = async function (req, res) {
   try {
+    // Find user by email
     const user = await User.findOne({ email: req.body.email });
-    //match current password
+
+    // Compare current password with hashed password in database
     const passwordMatches = await bcrypt.compare(
       req.body.password,
       user.password
     );
+
+    // If current password does not match, redirect back to password reset page
     if (!passwordMatches) {
       console.log("current password entered is invalid, try again:");
       return res.redirect("back");
     }
 
+    // Hash the new password
     const plaintextPassword = req.body.new_password;
     const saltRounds = 10;
     const hash = await bcrypt.hash(plaintextPassword, saltRounds);
+
+    // Update user's password and save changes
     user.password = hash;
     await user.save();
+
     console.log("Password updated");
-    return res.redirect("/destroy-session");
+    return res.redirect("/destroy-session"); // Redirect to sign-in page
   } catch (e) {
     console.log("Error in reseting password: ", e);
   }
